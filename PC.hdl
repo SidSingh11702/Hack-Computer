@@ -1,0 +1,9 @@
+CHIP PC {
+    IN Aout[16], load, reset;
+    OUT out[16];
+
+    PARTS:
+	CLA16(x=PCout, y[1..15]=false, y[0]=true, s=Adderout);
+	Mux4Way16(a=Adderout, b=Aout, c=false, d=false, sel[0]=load, sel[1]=reset, out=InPC);
+	Register(in=InPC, load=true, out=out, out=PCout);
+}

@@ -1,0 +1,33 @@
+/*
+* input x and y are 16-bit operands
+* input zx, nx, zy, ny, f, n0 are control signals
+* output zr and n0 are status bits
+* output out is output of ALU
+*/
+
+CHIP HackALU{
+	IN x[16], y[16], zx, nx, zy, ny, f, n0;
+	OUT out[16], zr, ng;
+
+	PARTS:
+
+	Mux16(a=x, b=false, sel=zx, out=x1);	//output x if zx=0 and false if zx=1
+	Xor16(a=x1, b[0]=nx, b[1]=nx, b[2]=nx, b[3]=nx, b[4]=nx, b[5]=nx, b[6]=nx, b[7]=nx, b[8]=nx, b[9]=nx, b[10]=nx, b[11]=nx, b[12]=nx, b[13]=nx, b[14]=nx, b[15]=nx, out=p);	//output x1 if nx=0 and !x1 if nx=1
+
+	Mux16(a=y, b=false, sel=zy, out=y1);	//output y if zy=0 and false if zy=1
+	Xor16(a=y1, b[0]=ny, b[1]=ny, b[2]=ny, b[3]=ny, b[4]=ny, b[5]=ny, b[6]=ny, b[7]=ny, b[8]=ny, b[9]=ny, b[10]=ny, b[11]=ny, b[12]=ny, b[13]=ny, b[14]=ny, b[15]=ny, out=q);	//output y1 if ny=0 and !y1 if ny=1
+
+
+	CLA16(x=p, y=q, s=pq1);	//p+q
+	And16(a=p, b=q, out=pq2);	//p.q
+
+	Mux16(a=pq2, b=pq1, sel=f, out=r);	//output p.q if f=0 and p+q if f=1
+
+	Xor16(a=r, b[0]=n0, b[1]=n0, b[2]=n0, b[3]=n0, b[4]=n0, b[5]=n0, b[6]=n0, b[7]=n0, b[8]=n0, b[9]=n0, b[10]=n0, b[11]=n0, b[12]=n0, b[13]=n0, b[14]=n0, b[15]=n0, out[0..7]=u, out[8..15]=v, out[15]=out15, out=out);	//output r if n0=0 and !r if n0=1
+
+	Or8Way(in=u, out=w1);
+	Or8Way(in=v, out=w2);
+	Or(a=w1, b=w2, out=w);
+	Not(in=w, out=zr); //zr
+	Or(a=false, b=out15, out=ng); //ng
+}

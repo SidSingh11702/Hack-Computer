@@ -1,0 +1,87 @@
+CHIP HackCPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset=1) or continue executing
+                         // the current program (reset=0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write into M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	Not(in=instruction[15], out=ni);	//select line for MUX1
+	Mux16(a=outtM, b=instruction, sel=ni, out=i);	//MUX1
+
+	And(a=instruction[15], b=instruction[5], out=I15I5);
+	Or(a=ni, b=I15I5, out=writeA);	//To check for Write A conditions
+	ARegister(in=i, load=writeA, out=A, out[0..14]=addressM);	
+
+	And(a=instruction[15], b=instruction[12], out=AorM);	//select line for MUX2
+	Mux16(a=A, b=inM, sel=AorM, out=AM);	//MUX2
+	
+	HackALU(x=D, y=AM, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], n0=instruction[6], out=outtM, out=outM, zr=zr, ng=ng);
+
+	And(a=instruction[15], b=instruction[4], out=writeD);	//To check for Write D condition
+	DRegister(in=outtM, load=writeD, out=D);
+
+	And(a=instruction[15], b=instruction[3], out=writeM);	//TO check for Write M condition
+
+//Calculation of J
+
+	Not(in=instruction[0], out=notI0);
+	Not(in=instruction[1], out=notI1);
+	Not(in=instruction[2], out=notI2);
+	Not(in=zr, out=notzr);
+	Not(in=ng, out=notng);
+
+	//Calculation of JMP
+	And(a=instruction[0], b=instruction[1], out=I0I1);
+	And(a=instruction[2], b=I0I1, out=JMP);
+
+	//Calculation of JGT
+	And(a=notI2, b=notI1, out=notI2notI1);
+	And(a=instruction[0], b=notI2notI1, out=xJGT);
+	And(a=notzr, b=notng, out=w1);
+	And(a=w1, b=xJGT, out=JGT);
+
+	//Calculation of JEQ
+	And(a=notI2, b=notI0, out=notI2notI0);
+	And(a=instruction[1], b=notI2notI0, out=xJEQ);
+	And(a=zr, b=xJEQ, out=JEQ);
+
+	//Calculation of JGE
+	And(a=notI2, b=instruction[1], out=notI2I1);
+	And(a=instruction[0], b=notI2I1, out=xJGE);
+	And(a=zr, b=notng, out=w2);
+	And(a=w2, b=xJGE, out=JGE);
+
+	//Calculation of JLT
+	And(a=notI1, b=notI0, out=notI1notI0);
+	And(a=instruction[2], b=notI1notI0, out=xJLT);
+	And(a=notzr, b=ng, out=w3);
+	And(a=w3, b=xJLT, out=JLT);
+
+	//Calculation of JNE
+	And(a=instruction[2], b=notI1, out=I2notI1);
+	And(a=instruction[0], b=I2notI1, out=xJNE);
+	And(a=notzr, b=xJNE, out=JNE);
+
+	//Calculation of JLE
+	And(a=instruction[1], b=notI0, out=I1notI0);
+	And(a=instruction[2], b=I1notI0, out=xJLE);
+	And(a=zr, b=ng, out=w4);
+	And(a=w4, b=xJLE, out=JLE);
+
+	Or(a=JMP, b=JGT, out=u1);
+	Or(a=JEQ, b=JGE, out=u2);
+	Or(a=JLT, b=JNE, out=u3);
+	Or(a=u1, b=u2, out=u4);
+	Or(a=u3, b=u4, out=u5);
+	Or(a=u5, b=JLE, out=xJ);
+
+	And(a=instruction[15], b=xJ, out=J);
+	PC(Aout=A, load=J, reset=reset, out[0..14]=pc);	//program counter
+}

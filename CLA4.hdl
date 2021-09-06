@@ -1,0 +1,63 @@
+CHIP CLA4 {
+
+	IN l[4], m[4], c0;
+	OUT s[4],c4,prevcarry;
+
+	PARTS:
+
+// First-level Propagate terms 
+
+    Xor(a=l[0], b=m[0], out=p0);
+    Xor(a=l[1], b=m[1], out=p1);
+    Xor(a=l[2], b=m[2], out=p2);
+    Xor(a=l[3], b=m[3], out=p3);
+
+// First-level Generate terms 
+
+    And(a=l[0], b=m[0], out=g0);
+    And(a=l[1], b=m[1], out=g1);
+    And(a=l[2], b=m[2], out=g2);
+    And(a=l[3], b=m[3], out=g3);
+
+// Carry bits
+//c1
+    And(a=p0, b=c0, out=p0c0);
+    Or(a=p0c0, b=g0, out=c1);
+
+//c2
+    And(a=p1, b=p0c0, out=p1p0c0);
+    And(a=p1, b=g0, out=p1g0);
+    Or(a=p1p0c0, b=p1g0, out=z20);
+    Or(a=z20, b=g1, out=c2);
+
+//c3
+    And(a=p2, b=p1p0c0, out=p2p1p0c0);
+    And(a=p2, b=p1g0, out=p2p1g0);
+    And(a=p2, b=g1, out=p2g1);
+    Or(a=p2p1p0c0, b=p2p1g0, out=z30);
+    Or(a=p2g1, b=g2, out=z31);
+    Or(a=z30, b=z31, out=c3);
+
+//c4
+    And(a=p3, b=p2p1p0c0, out=p3p2p1p0c0);
+    And(a=p3, b=p2p1g0, out=p3p2p1g0);
+    And(a=p3, b=p2g1, out=p3p2g1);
+    And(a=p3, b=g2, out=p3g2);
+    Or(a=p3p2p1p0c0, b=p3p2p1g0, out=z40);
+    Or(a=p3p2g1, b=p3g2, out=z41);
+    Or(a=z40, b=z41, out=z42);
+    Or(a=z42, b=g3, out=c4);
+
+
+//output prev carry
+
+	Or(a=false, b=c3, out=prevcarry);
+
+
+// Sum bits 
+
+    Xor(a=p0 ,b=c0 ,out=s[0]);
+    Xor(a=p1 ,b=c1 ,out=s[1]);
+    Xor(a=p2 ,b=c2 ,out=s[2]);
+    Xor(a=p3 ,b=c3 ,out=s[3]);
+}

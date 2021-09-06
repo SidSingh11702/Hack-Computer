@@ -1,0 +1,17 @@
+/**
+ * Adds two 16-bit values using CLA without using higher level propogate and generate terms.
+ */
+
+CHIP CLA16 {
+
+
+   	IN x[16], y[16];
+	OUT s[16];
+
+	PARTS:
+
+	CLA4(l[0..3]=x[0..3], m[0..3]=y[0..3], c0=false, s[0..3]=s[0..3], c4=c4);
+	CLA4(l[0..3]=x[4..7], m[0..3]=y[4..7], c0=c4, s[0..3]=s[4..7], c4=c8);
+	CLA4(l[0..3]=x[8..11], m[0..3]=y[8..11], c0=c8, s[0..3]=s[8..11], c4=c12);
+	CLA4(l[0..3]=x[12..15], m[0..3]=y[12..15], c0=c12, s[0..3]=s[12..15], c4=c16);
+}
